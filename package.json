@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "dayjs": "^1.11.20",
+    "rc-slider": "^11.1.9"
+  }
+}

@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-900 font-sans min-h-screen;
+}
+
+/* Simple page transition wrapper */
+.page-transition-wrapper {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Nội dung chính */
+.text-content {
+  @apply text-gray-900;
+}
+
+/* Enhanced button styles */
+@layer components {
+  .btn-udck {
+    @apply inline-flex items-center justify-center rounded-lg border-2 border-udck-primary px-4 py-2 font-medium transition-all duration-300 bg-udck-primary text-white hover:bg-udck-dark;
+    @apply transform hover:scale-105 active:scale-95;
+  }
+
+  .btn-udck-outline {
+    @apply inline-flex items-center justify-center rounded-lg border-2 border-udck-primary px-4 py-2 font-medium transition-all duration-300 text-gray-900 hover:bg-udck-muted;
+    @apply transform hover:scale-105 active:scale-95;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

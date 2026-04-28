@@ -1,0 +1,180 @@
+/* FullCalendar v6 - Load from global build via CDN or bundled */
+@import url('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.6/index.global.css');
+
+/* Custom styling for FullCalendar - clean and light theme */
+
+.fc {
+  font-family: inherit;
+  --fc-border-color: #e5e7eb;
+  --fc-bg-event-opacity: 0.8;
+  --fc-event-bg-color: #ef4444;
+  --fc-event-border-color: #dc2626;
+  --fc-event-text-color: #ffffff;
+  --fc-event-selected-bg-color: #b91c1c;
+  --fc-today-bg-color: #f0f9ff;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #f9fafb;
+  --fc-neutral-text-color: #374151;
+  --fc-button-text-color: #1f2937;
+  --fc-button-bg-color: #f3f4f6;
+  --fc-button-border-color: #d1d5db;
+  --fc-button-hover-bg-color: #e5e7eb;
+  --fc-button-active-bg-color: #ef4444;
+  --fc-button-active-border-color: #dc2626;
+  --fc-button-active-text-color: #ffffff;
+}
+
+/* Dark mode */
+.dark .fc {
+  --fc-border-color: #4b5563;
+  --fc-bg-event-opacity: 0.85;
+  --fc-event-bg-color: #ef4444;
+  --fc-today-bg-color: #1e3a5f;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #1e293b;
+  --fc-neutral-text-color: #cbd5e1;
+  --fc-button-text-color: #cbd5e1;
+  --fc-button-bg-color: #334155;
+  --fc-button-border-color: #475569;
+  --fc-button-hover-bg-color: #475569;
+  --fc-button-active-bg-color: #ef4444;
+  --fc-button-active-border-color: #dc2626;
+}
+
+/* Compact and clean layout */
+.fc-col-header-cell {
+  padding: 8px 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.fc-daygrid-day {
+  padding: 4px;
+  min-height: 80px;
+}
+
+.fc-daygrid-day-number {
+  padding: 4px 4px;
+  font-size: 0.875rem;
+}
+
+.fc-daygrid-day-frame {
+  min-height: 80px;
+}
+
+.fc-event {
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border: none;
+}
+
+.fc-event-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Highlight booked dates with red background */
+.fc-day-booked {
+  background-color: #fee2e2;
+  border: 1px solid #dc2626;
+}
+
+.dark .fc-day-booked {
+  background-color: rgba(220, 38, 38, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+}
+
+/* Button styling - clean */
+.fc-button {
+  text-transform: none;
+  font-size: 0.875rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.fc-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.fc-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #3b82f6;
+  border-color: #2563eb;
+}
+
+.fc-button-primary {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #1f2937;
+}
+
+.dark .fc-button-primary {
+  background-color: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+/* Header toolbar */
+.fc-toolbar {
+  padding: 12px 0;
+  margin-bottom: 16px;
+}
+
+.fc-toolbar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Month grid */
+.fc-daygrid-day-frame {
+  border-radius: 4px;
+}
+
+/* Today indicator */
+.fc-daygrid-day.fc-day-today {
+  background-color: #f0f9ff;
+}
+
+.dark .fc-daygrid-day.fc-day-today {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+/* Minimal borders */
+.fc th,
+.fc td {
+  border-color: #e5e7eb;
+}
+
+.dark .fc th,
+.dark .fc td {
+  border-color: #4b5563;
+}
+
+/* Weekend highlighting (optional) */
+.fc-daygrid-day.fc-day-sun,
+.fc-daygrid-day.fc-day-sat {
+  background-color: #fafafa;
+}
+
+.dark .fc-daygrid-day.fc-day-sun,
+.dark .fc-daygrid-day.fc-day-sat {
+  background-color: rgba(100, 116, 139, 0.1);
+}
+
+/* Remove extra spacing */
+.fc-daygrid {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.dark .fc-daygrid {
+  border-color: #4b5563;
+}
