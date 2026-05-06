@@ -86,28 +86,7 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* ========= STUDENT NAV ========= */}
-          {isStudent && (
-            <div className="hidden md:flex items-center gap-2 flex-grow justify-center">
-              <NavLink to="/student/dashboard" end className={navLinkClass}>
-                Dashboard
-              </NavLink>
 
-              <NavLink
-                to="/student/dashboard/book"
-                className={navLinkClass}
-              >
-                Đặt lịch
-              </NavLink>
-
-              <NavLink
-                to="/student/dashboard/appointments"
-                className={navLinkClass}
-              >
-                Quản lý lịch
-              </NavLink>
-            </div>
-          )}
 
           {/* ========= RIGHT ACTIONS ========= */}
           <div className="flex items-center gap-3">
@@ -176,45 +155,6 @@ const Navbar = () => {
       {mobileMenuOpen && isStudent && (
         <div className="md:hidden bg-white border-b">
           <div className="px-4 py-3 space-y-2">
-            <NavLink
-              to="/student/dashboard"
-              end
-              className={({ isActive }) =>
-                `block px-4 py-3 rounded-lg ${
-                  isActive
-                    ? "bg-udck-primary text-white"
-                    : "hover:bg-gray-200"
-                }`
-              }
-            >
-              Dashboard
-            </NavLink>
-
-            <NavLink
-              to="/student/dashboard/book"
-              className={({ isActive }) =>
-                `block px-4 py-3 rounded-lg ${
-                  isActive
-                    ? "bg-udck-primary text-white"
-                    : "hover:bg-gray-200"
-                }`
-              }
-            >
-              Đặt lịch
-            </NavLink>
-
-            <NavLink
-              to="/student/dashboard/appointments"
-              className={({ isActive }) =>
-                `block px-4 py-3 rounded-lg ${
-                  isActive
-                    ? "bg-udck-primary text-white"
-                    : "hover:bg-gray-200"
-                }`
-              }
-            >
-              Quản lý lịch
-            </NavLink>
           </div>
         </div>
       )}

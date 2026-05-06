@@ -7,24 +7,11 @@ const Notification = require("../models/Notification");
 const AppError = require("../utils/AppError");
 const catchAsync = require("../utils/catchAsync");
 const { Op } = require("sequelize");
-const { connect } = require('../utils/sendEmail');
 const {
   getReadMapForUser,
   markNotificationKeyAsRead,
   markNotificationKeysAsRead,
 } = require("./notificationHelper");
-const transporter = connect();
-
-const sendMailSafely = async (mailOptions) => {
-  try {
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    // Không để lỗi email làm hỏng luồng nghiệp vụ chính (approve/reject/adjust)
-    console.error("Mail send failed:", error?.message || error);
-    return false;
-  }
-};
 
 const getLecturerIdFromUserId = async (userId) => {
   const row = await Lecturer.findOne({ where: { User_ID: userId } });
@@ -50,7 +37,13 @@ exports.getAllAppointments = catchAsync(async (req, res, next) => {
       { model: Student, as: 'AppointmentStudent' },
       { model: User, as: 'AdjustedUser' },
       { model: AvailableSlot, as: 'AvailableSlot' }
-    ] 
+    ],
+    order: [
+      ['HandledAt', 'DESC'],
+      ['AdjustedAt', 'DESC'],
+      ['RequestedAt', 'DESC'],
+      ['Appoint_ID', 'DESC'],
+    ]
   });
   const appointments = rows.map((r) => (r.get ? r.get({ plain: true }) : r));
   res.status(200).json({ status: "SUCCESS", data: { appointments } });
@@ -85,7 +78,7 @@ exports.approveAppointment = catchAsync(async (req, res, next) => {
   try {
     const locationValue = String(req.body?.Location || req.body?.location || "").trim();
     await Appointment.update(
-      { Status: "Approved", ...(locationValue ? { Location: locationValue } : {}) },
+      { Status: "Approved", ...(locationValue ? { Location: locationValue } : {}), HandledAt: new Date() },
       { where: { Appoint_ID: req.params.id } }
     );
 
@@ -93,22 +86,6 @@ exports.approveAppointment = catchAsync(async (req, res, next) => {
     if (!appointment) {
       console.error("Appointment not found for ID:", req.params.id);
       return res.status(404).json({ status: "FAIL", message: "Appointment not found" });
-    }
-
-    if (appointment.AppointmentStudent) {
-      const emailSent = await sendMailSafely({
-        from: '"tutor-time@brevo.com',
-        to: appointment.AppointmentStudent.Email,
-        subject: "Appointment Accepted",
-        html: `
-          <h2>Dear Student,</h2>
-          <p>Your appointment has been approved by the lecturer.</p>
-          <p>Please join on time. Thank you for using Tutor-Time!</p>
-        `
-      });
-      if (!emailSent) {
-        console.warn("Failed to send email to:", appointment.AppointmentStudent.Email);
-      }
     }
 
     res.status(200).json({ status: "SUCCESS", message: "Appointment approved" });
@@ -125,28 +102,13 @@ exports.disapproveAppointment = catchAsync(async (req, res, next) => {
     await Appointment.update(
       { 
         Status: "Rejected", 
-        RejectionReason: rejectionReason || "Không có lý do cụ thể" 
+        RejectionReason: rejectionReason || "Không có lý do cụ thể",
+        HandledAt: new Date(),
       },
       { where: { Appoint_ID: req.params.id } }
     );
 
     const appointment = await Appointment.findByPk(req.params.id, { include: [{ model: Student, as: 'AppointmentStudent' }] });
-    if (appointment && appointment.AppointmentStudent) {
-      const emailSent = await sendMailSafely({
-        from: '"tutor-time@brevo.com',
-        to: appointment.AppointmentStudent.Email,
-        subject: "Appointment Rejected",
-        html: `
-          <h2>Dear Student,</h2>
-          <p>Your appointment has been rejected by the lecturer.</p>
-          <p>Reason: ${rejectionReason || "No specific reason provided."}</p>
-        `
-      });
-      if (!emailSent) {
-        console.warn("Failed to send email to:", appointment.AppointmentStudent.Email);
-      }
-    }
-
     res.status(200).json({ status: "SUCCESS", message: "Appointment rejected" });
   } catch (error) {
     console.error("Error in disapproveAppointment:", error);
@@ -174,7 +136,7 @@ exports.adjustAppointment = catchAsync(async (req, res, next) => {
     }
 
     await Appointment.update(
-      { StuStartTime, StuEndTime, adjustmentNote },
+      { StuStartTime, StuEndTime, AdjustmentNote: adjustmentNote, AdjustedAt: new Date(), HandledAt: new Date() },
       { where: { Appoint_ID: req.params.id } }
     );
 
@@ -198,6 +160,10 @@ exports.getPendingAppointments = catchAsync(async (req, res, next) => {
       { model: Student, as: 'AppointmentStudent' },
       { model: User, as: 'AdjustedUser' }
     ],
+    order: [
+      ['RequestedAt', 'DESC'],
+      ['Appoint_ID', 'DESC'],
+    ]
   });
   const appointments = rows.map((r) => (r.get ? r.get({ plain: true }) : r));
   res.status(200).json({ status: "SUCCESS", data: { appointments } });
@@ -428,16 +394,34 @@ const buildLecturerNotifications = async (lecturerId) => {
     const start = String(p.StuStartTime || p.AvailableSlot?.StartTime || "").slice(0, 5);
     const end = String(p.StuEndTime || p.AvailableSlot?.EndTime || "").slice(0, 5);
     const timeLabel = start && end ? `${start} - ${end}` : "N/A";
+    const dateLabel = p.AvailableSlot?.Date ? new Date(p.AvailableSlot.Date).toLocaleDateString("vi-VN") : "";
+    const locationLabel = p.Location ? ` tại ${p.Location}` : "";
+    const adjustmentNote = p.AdjustmentNote ? ` Lý do: ${p.AdjustmentNote}.` : "";
+    const rejectionReason = p.RejectionReason ? ` Lý do: ${p.RejectionReason}.` : "";
     const createdAt =
+      p.HandledAt ||
       p.AdjustedAt ||
+      p.RequestedAt ||
       (p.AvailableSlot?.Date ? `${p.AvailableSlot.Date}T${p.StuStartTime || p.AvailableSlot?.StartTime || "00:00:00"}` : new Date().toISOString());
+
+    if (p.AdjustedAt) {
+      return {
+        id: `adjusted-${p.Appoint_ID}`,
+        type: "request",
+        title: "Yêu cầu tư vấn đã được điều chỉnh",
+        message: `Yêu cầu của ${studentName} đã được điều chỉnh${locationLabel}. Thời gian mới: ${timeLabel}${dateLabel ? ` vào ${dateLabel}` : ""}.${adjustmentNote}`,
+        createdAt,
+        read: false,
+        appointmentId: p.Appoint_ID,
+      };
+    }
 
     if (status.includes("pending") || status.includes("chờ")) {
       return {
         id: `pending-${p.Appoint_ID}`,
         type: "request",
         title: "Yêu cầu tư vấn mới",
-        message: `${studentName} vừa gửi yêu cầu tư vấn (${timeLabel}).`,
+        message: `${studentName} vừa gửi yêu cầu tư vấn${locationLabel} (${timeLabel})${dateLabel ? ` vào ${dateLabel}` : ""}.`,
         createdAt,
         read: false,
         appointmentId: p.Appoint_ID,
@@ -449,7 +433,7 @@ const buildLecturerNotifications = async (lecturerId) => {
         id: `approved-${p.Appoint_ID}`,
         type: "confirmed",
         title: "Yêu cầu đã được duyệt",
-        message: `Bạn đã duyệt yêu cầu của ${studentName} (${timeLabel}).`,
+        message: `Bạn đã duyệt yêu cầu của ${studentName}${locationLabel}. Thời gian: ${timeLabel}${dateLabel ? ` vào ${dateLabel}` : ""}.${adjustmentNote}`,
         createdAt,
         read: false,
         appointmentId: p.Appoint_ID,
@@ -461,7 +445,7 @@ const buildLecturerNotifications = async (lecturerId) => {
         id: `rejected-${p.Appoint_ID}`,
         type: "cancelled",
         title: "Yêu cầu đã bị từ chối",
-        message: `Bạn đã từ chối yêu cầu của ${studentName}.${p.RejectionReason ? ` Lý do: ${p.RejectionReason}.` : ""}`,
+        message: `Bạn đã từ chối yêu cầu của ${studentName}.${locationLabel}${rejectionReason}`,
         createdAt,
         read: false,
         appointmentId: p.Appoint_ID,
@@ -472,7 +456,7 @@ const buildLecturerNotifications = async (lecturerId) => {
       id: `system-${p.Appoint_ID}`,
       type: "system",
       title: "Cập nhật lịch hẹn",
-      message: `${studentName} (${timeLabel}).`,
+      message: `${studentName} (${timeLabel})${locationLabel}.${adjustmentNote}`,
       createdAt,
       read: false,
       appointmentId: p.Appoint_ID,

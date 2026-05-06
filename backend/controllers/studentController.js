@@ -8,7 +8,6 @@ const AvailableSlot = require("../models/AvailableSlot");
 const Notification = require("../models/Notification");
 const AppError = require("../utils/AppError");
 const catchAsync = require("../utils/catchAsync");
-const { connect } = require("../utils/sendEmail");
 const { Op } = require('sequelize');
 const { sequelize } = require("../db");
 const { signToken } = require("./authController");
@@ -17,7 +16,6 @@ const {
   markNotificationKeyAsRead,
   markNotificationKeysAsRead,
 } = require("./notificationHelper");
-const transporter = connect();
 
 // udck: JWT id là User.ID; APPOINTMENTS.Student_ID là STUDENT.Student_ID
 const getStudentIdFromUserId = async (userId) => {
@@ -76,7 +74,11 @@ const getRegisteredAppointments = async (userId) => {
         as: 'AdjustedUser',
         required: false
       }
-    ]
+    ],
+    order: [
+      ['RequestedAt', 'DESC'],
+      ['Appoint_ID', 'DESC'],
+    ],
   });
 
   const now = new Date();
@@ -249,21 +251,6 @@ exports.bookAppointment = catchAsync(async (req, res, next) => {
       minute: "numeric",
       hour12: true,
     });
-
-    try {
-      await transporter.sendMail({
-        from: '"tutor-time@brevo.com',
-        to: req.body.teacherEmail || "noreply@udck.edu.vn",
-        subject: isNew ? "Appointment Request" : "Appointment Updated",
-        html: `
-              <h2>Dear Teacher,</h2>
-              <p>You have received ${isNew ? "an appointment request" : "an appointment update"} from a student scheduled for ${formattedDate}, and the timing is ${formattedTime}.</p>
-              <p>Please log in to our platform to review and respond to the request.</p>
-          `,
-      });
-    } catch (e) {
-      // ignore mail error
-    }
 
     res.status(200).json({
       status: "SUCCESS",
@@ -566,14 +553,17 @@ const buildStudentNotifications = async (studentId) => {
       const slotDate = p.AvailableSlot?.Date || null;
       const timeLabel = start && end ? `${start} - ${end}` : "N/A";
       const slotDateTime = toViDateTime(slotDate, p.StuStartTime || p.AvailableSlot?.StartTime);
-      const createdAt = p.AdjustedAt || `${slotDate || new Date().toISOString().slice(0, 10)}T${p.StuStartTime || "00:00:00"}`;
+      const locationLabel = p.Location ? ` tại ${p.Location}` : "";
+      const adjustmentReason = p.AdjustmentNote ? ` Lý do điều chỉnh: ${p.AdjustmentNote}.` : "";
+      const rejectionReason = p.RejectionReason ? ` Lý do: ${p.RejectionReason}.` : "";
+      const createdAt = p.HandledAt || p.AdjustedAt || p.RequestedAt || `${slotDate || new Date().toISOString().slice(0, 10)}T${p.StuStartTime || "00:00:00"}`;
 
       if (p.AdjustedAt || p.AdjustmentNote || p.AdjustedBy) {
         return {
           id: `adjusted-${p.Appoint_ID}`,
           type: "appointment_adjusted",
           title: "Yêu cầu tư vấn đã được duyệt và điều chỉnh thời gian",
-          message: `${lecturerName} đã duyệt yêu cầu tư vấn của bạn và điều chỉnh thời gian thành ${timeLabel}.${p.AdjustmentNote ? ` Lý do: ${p.AdjustmentNote}.` : ""}`,
+          message: `${lecturerName} đã duyệt yêu cầu tư vấn của bạn${locationLabel} và điều chỉnh thời gian thành ${timeLabel}${slotDate ? ` vào ${slotDate}` : ""}.${adjustmentReason}`,
           read: false,
           createdAt,
           appointmentId: p.Appoint_ID,
@@ -581,12 +571,11 @@ const buildStudentNotifications = async (studentId) => {
       }
 
       if (status.includes("approved") || status.includes("đã duyệt")) {
-        const adjustmentReason = p.AdjustmentNote ? ` Lý do điều chỉnh: ${p.AdjustmentNote}.` : "";
         return {
           id: `approved-${p.Appoint_ID}`,
           type: "appointment_approved",
           title: "Yêu cầu tư vấn đã được duyệt",
-          message: `${lecturerName} đã duyệt lịch tư vấn của bạn (${timeLabel}) vào ${slotDateTime}.${adjustmentReason}`,
+          message: `${lecturerName} đã duyệt lịch tư vấn của bạn${locationLabel} (${timeLabel}) vào ${slotDateTime}.${adjustmentReason}`,
           read: false,
           createdAt,
           appointmentId: p.Appoint_ID,
@@ -594,12 +583,11 @@ const buildStudentNotifications = async (studentId) => {
       }
 
       if (status.includes("rejected") || status.includes("từ chối")) {
-        const reason = p.RejectionReason ? ` Lý do: ${p.RejectionReason}.` : "";
         return {
           id: `rejected-${p.Appoint_ID}`,
           type: "appointment_rejected",
           title: "Yêu cầu tư vấn bị từ chối",
-          message: `${lecturerName} đã từ chối lịch tư vấn (${timeLabel}).${reason}`,
+          message: `${lecturerName} đã từ chối lịch tư vấn của bạn${locationLabel}.${rejectionReason}`,
           read: false,
           createdAt,
           appointmentId: p.Appoint_ID,

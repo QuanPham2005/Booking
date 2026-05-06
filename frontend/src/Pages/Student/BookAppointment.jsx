@@ -192,6 +192,11 @@ export default function BookAppointment() {
       return;
     }
 
+    if (selectedStart >= selectedEnd) {
+      toast.error("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await axios.patch(

@@ -161,9 +161,10 @@ const MyAppointments = () => {
     }
 
     const sortedNewestFirst = [...filtered].sort((a, b) => {
-      const aTime = new Date(a.scheduleAt || 0).getTime();
-      const bTime = new Date(b.scheduleAt || 0).getTime();
-      return bTime - aTime;
+      const aRequested = a.RequestedAt ? new Date(a.RequestedAt).getTime() : 0;
+      const bRequested = b.RequestedAt ? new Date(b.RequestedAt).getTime() : 0;
+      if (aRequested !== bRequested) return bRequested - aRequested;
+      return (b.Appoint_ID || 0) - (a.Appoint_ID || 0);
     });
 
     setFilteredAppointments(sortedNewestFirst);

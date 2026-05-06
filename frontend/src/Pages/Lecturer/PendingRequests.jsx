@@ -104,13 +104,20 @@ const PendingRequests = () => {
     return slotDate >= today;
   });
 
+  const sortedVisibleAppointments = [...visibleAppointments].sort((a, b) => {
+    const aRequested = a.RequestedAt ? new Date(a.RequestedAt).getTime() : 0;
+    const bRequested = b.RequestedAt ? new Date(b.RequestedAt).getTime() : 0;
+    if (aRequested !== bRequested) return bRequested - aRequested;
+    return (b.Appoint_ID || 0) - (a.Appoint_ID || 0);
+  });
+
   // Auto open detail modal when coming from dashboard (e.g. ?open=11)
   useEffect(() => {
     if (loading) return;
     const openId = searchParams.get("open");
     if (!openId) return;
 
-    const target = visibleAppointments.find(
+    const target = sortedVisibleAppointments.find(
       (a) => String(a.Appoint_ID || a.id) === String(openId)
     );
 
@@ -126,10 +133,10 @@ const PendingRequests = () => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("open");
     setSearchParams(nextParams, { replace: true });
-  }, [loading, searchParams, setSearchParams, visibleAppointments]);
+  }, [loading, searchParams, setSearchParams, sortedVisibleAppointments]);
 
   // Lọc appointments theo tab (sẵn sàng với nhiều kiểu case)
-  const filteredAppointments = visibleAppointments.filter((a) => {
+  const filteredAppointments = sortedVisibleAppointments.filter((a) => {
     const studentName = (a.AppointmentStudent?.Full_Name || "").toLowerCase();
     const studentCode = String(a.Student_ID || "").toLowerCase();
     const keyword = searchTerm.trim().toLowerCase();
@@ -146,20 +153,20 @@ const PendingRequests = () => {
 
   // Tabs configuration
   const tabs = [
-    { id: "all", label: "Tất cả", count: visibleAppointments.length, icon: CircleDashed },
-    { id: "pending", label: "Chờ duyệt", count: visibleAppointments.filter((a) => {
+    { id: "all", label: "Tất cả", count: sortedVisibleAppointments.length, icon: CircleDashed },
+    { id: "pending", label: "Chờ duyệt", count: sortedVisibleAppointments.filter((a) => {
       const st = normalizeStatus(getEffectiveStatus(a));
       return st.includes("pending") || st.includes("chờ");
     }).length, icon: CheckCircle2 },
-    { id: "approved", label: "Đã duyệt", count: visibleAppointments.filter((a) => {
+    { id: "approved", label: "Đã duyệt", count: sortedVisibleAppointments.filter((a) => {
       const st = normalizeStatus(getEffectiveStatus(a));
       return st.includes("approved") || st.includes("đã duyệt");
     }).length, icon: CheckCheck },
-    { id: "rejected", label: "Từ chối", count: visibleAppointments.filter((a) => {
+    { id: "rejected", label: "Từ chối", count: sortedVisibleAppointments.filter((a) => {
       const st = normalizeStatus(getEffectiveStatus(a));
       return st.includes("rejected") || st.includes("từ chối");
     }).length, icon: XCircle },
-    { id: "overdue", label: "Quá hạn", count: visibleAppointments.filter((a) => {
+    { id: "overdue", label: "Quá hạn", count: sortedVisibleAppointments.filter((a) => {
       const st = normalizeStatus(getEffectiveStatus(a));
       return st.includes("overdue") || st.includes("quá hạn");
     }).length, icon: Clock3 },
@@ -431,14 +438,14 @@ const PendingRequests = () => {
 
           {selectedAppointment && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center  "
               onClick={() => setSelectedAppointment(null)}
             >
               <div
-                    className="w-full max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+                    className="w-full max-w-4xl max-h-[calc(100vh-1rem)] overflow-y-auto rounded-xl bg-white p-4 shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div className="mb-3 flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
                       <div className="flex items-center gap-2">
                         <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
                           <FileText className="h-5 w-5" />
@@ -458,27 +465,27 @@ const PendingRequests = () => {
                       </button>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="mb-3 flex items-center gap-2 text-slate-700">
-                        <GraduationCap className="h-4 w-4" />
-                        <p className="text-base font-semibold">Thông tin sinh viên</p>
+                    <div className="mb-3">
+                      <div className="mb-2 flex items-center gap-2 text-slate-700">
+                        <GraduationCap className="h-3 w-3" />
+                        <p className="text-sm font-semibold">Thông tin sinh viên</p>
                       </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Họ và tên</p>
-                          <p className="text-base font-semibold text-slate-800">{selectedAppointment.AppointmentStudent?.Full_Name || "N/A"}</p>
+                          <p className="text-sm font-semibold text-slate-800">{selectedAppointment.AppointmentStudent?.Full_Name || "N/A"}</p>
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Mã số sinh viên</p>
-                          <p className="text-base font-semibold text-slate-800">{selectedAppointment.Student_ID || "N/A"}</p>
+                          <p className="text-sm font-semibold text-slate-800">{selectedAppointment.Student_ID || "N/A"}</p>
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Lớp</p>
-                          <p className="text-base font-semibold text-slate-800">{selectedAppointment.AppointmentStudent?.ClassName || selectedAppointment.AppointmentStudent?.Class || "N/A"}</p>
+                          <p className="text-sm font-semibold text-slate-800">{selectedAppointment.AppointmentStudent?.ClassName || selectedAppointment.AppointmentStudent?.Class || "N/A"}</p>
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Ngày gửi yêu cầu</p>
-                          <p className="text-base font-semibold text-slate-800">
+                          <p className="text-sm font-semibold text-slate-800">
                             {selectedAppointment.RequestedAt
                               ? new Date(selectedAppointment.RequestedAt).toLocaleDateString("vi-VN")
                               : selectedAppointment.CreatedAt
@@ -491,15 +498,15 @@ const PendingRequests = () => {
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="mb-3 flex items-center gap-2 text-slate-700">
-                        <CalendarDays className="h-4 w-4" />
-                        <p className="text-base font-semibold">Thời gian hẹn tư vấn</p>
+                    <div className="mb-3">
+                      <div className="mb-2 flex items-center gap-2 text-slate-700">
+                        <CalendarDays className="h-3 w-3" />
+                        <p className="text-sm font-semibold">Thời gian hẹn tư vấn</p>
                       </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Ngày</p>
-                          <p className="text-base font-semibold text-slate-800">
+                          <p className="text-sm font-semibold text-slate-800">
                             {selectedAppointment.AvailableSlot?.Date
                               ? new Date(selectedAppointment.AvailableSlot.Date).toLocaleDateString("vi-VN", {
                                 weekday: "long",
@@ -510,78 +517,78 @@ const PendingRequests = () => {
                               : "N/A"}
                           </p>
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                           <p className="text-xs text-slate-500">Giờ</p>
-                          <p className="text-base font-semibold text-slate-800">
+                          <p className="text-sm font-semibold text-slate-800">
                             {getRequestedTimeRange(selectedAppointment).label}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="mb-3 flex items-center gap-2 text-slate-700">
-                        <ClipboardList className="h-4 w-4" />
-                        <p className="text-base font-semibold">Nội dung yêu cầu tư vấn</p>
+                    <div className="mb-3">
+                      <div className="mb-2 flex items-center gap-2 text-slate-700">
+                        <ClipboardList className="h-3 w-3" />
+                        <p className="text-sm font-semibold">Nội dung yêu cầu tư vấn</p>
                       </div>
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 break-words">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 break-words">
                         {selectedAppointment.Reason || "Không có nội dung được cung cấp"}
                       </div>
                     </div>
 
-                    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                      <span className="font-semibold text-slate-700">Trạng thái hiện tại: </span>
+                    <div className="mb-3 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600">
+                      <span className="font-semibold text-slate-700">Trạng thái: </span>
                       <Badge variant={getStatusVariant(getEffectiveStatus(selectedAppointment))}>
                         {getStatusLabel(getEffectiveStatus(selectedAppointment))}
                       </Badge>
                     </div>
 
                     {isPendingStatus(getEffectiveStatus(selectedAppointment)) ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Địa điểm (bắt buộc khi chấp nhận)</label>
+                            <label className="mb-1 block text-xs font-medium text-slate-700">Địa điểm</label>
                             <input
                               value={approveLocation}
                               onChange={(e) => setApproveLocation(e.target.value)}
-                              placeholder="Ví dụ: Phòng A101 / Online (Google Meet)..."
-                              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-udck-primary focus:ring-2 focus:ring-udck-primary/10"
+                              placeholder="Ví dụ: Phòng A101 / Online"
+                              className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-700 outline-none transition focus:border-udck-primary focus:ring-1 focus:ring-udck-primary/10"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-slate-700">Lý do từ chối (bắt buộc khi từ chối)</label>
+                            <label className="mb-1 block text-xs font-medium text-slate-700">Lý do từ chối</label>
                             <input
                               value={rejectReason}
                               onChange={(e) => setRejectReason(e.target.value)}
-                              placeholder="Ví dụ: Trùng lịch dạy / Nội dung chưa phù hợp..."
-                              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-500/10"
+                              placeholder="Ví dụ: Trùng lịch dạy"
+                              className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs text-slate-700 outline-none transition focus:border-red-400 focus:ring-1 focus:ring-red-500/10"
                             />
                           </div>
                         </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         <button
                           onClick={() => openAdjustModal(selectedAppointment)}
-                          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 transition hover:bg-amber-100"
+                          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
                         >
                           Chỉnh sửa
                         </button>
                         <button
                           onClick={() => approveAppointment(selectedAppointment.Appoint_ID || selectedAppointment.id)}
-                          className="rounded-lg bg-udck-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-udck-dark"
+                          className="rounded-lg bg-udck-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-udck-dark"
                         >
                           Chấp nhận
                         </button>
                         <button
                           onClick={() => rejectAppointment(selectedAppointment.Appoint_ID || selectedAppointment.id)}
-                          className="rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                          className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
                         >
                           Từ chối
                         </button>
                       </div>
                       </div>
                     ) : (
-                      <div className="text-sm text-slate-500">Yêu cầu đã được xử lý. Bạn có thể đóng bằng nút X.</div>
+                      <div className="text-xs text-slate-500">Yêu cầu đã được xử lý. Đóng bằng nút X.</div>
                     )}
                   </div>
                 </div>
@@ -589,17 +596,17 @@ const PendingRequests = () => {
 
           {showAdjustModal && selectedAppointment && (
             <div
-              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+              className="fixed inset-0 z-[60] flex items-center justify-center px-2 py-3 sm:px-3 sm:py-4"
               onClick={() => setShowAdjustModal(false)}
             >
               <div
-                className="w-full max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+                className="w-full max-w-[calc(100vw-2rem)] sm:max-w-[36rem] lg:max-w-[40rem] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl bg-white shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between bg-amber-500 px-6 py-4 text-white">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-amber-500 px-4 py-3 text-white">
                   <div>
-                    <h3 className="text-3xl font-semibold">Chỉnh sửa thời gian tư vấn</h3>
-                    <p className="text-white/90">Điều chỉnh khoảng thời gian phù hợp hơn</p>
+                    <h3 className="text-base font-semibold sm:text-lg">Chỉnh sửa thời gian tư vấn</h3>
+                    <p className="text-white/90 text-sm">Điều chỉnh khoảng thời gian phù hợp hơn</p>
                   </div>
                   <button
                     onClick={() => setShowAdjustModal(false)}
@@ -609,17 +616,17 @@ const PendingRequests = () => {
                   </button>
                 </div>
 
-                <div className="space-y-5 p-6">
-                  <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+                <div className="space-y-3 p-3">
+                  <div className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
                     <div>
-                      <p className="text-sm text-slate-500">Sinh viên</p>
-                      <p className="text-2xl font-semibold text-slate-800">
+                      <p className="text-xs text-slate-500">Sinh viên</p>
+                      <p className="text-base font-semibold text-slate-800">
                         {selectedAppointment.AppointmentStudent?.Full_Name || "N/A"}
                       </p>
                     </div>
                     <div className="sm:text-right">
-                      <p className="text-sm text-slate-500">Thời gian hiện tại</p>
-                      <p className="text-2xl font-semibold text-slate-800">
+                      <p className="text-xs text-slate-500">Thời gian hiện tại</p>
+                      <p className="text-base font-semibold text-slate-800">
                         {selectedAppointment.AvailableSlot?.Date
                           ? new Date(selectedAppointment.AvailableSlot.Date).toLocaleDateString("vi-VN")
                           : "N/A"}{" "}
@@ -628,8 +635,8 @@ const PendingRequests = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-4 flex items-center justify-between text-lg font-semibold text-slate-700">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
                       <span>Từ: {formatHHmm(adjustStart || 0)}</span>
                       <span>Đến: {formatHHmm(adjustEnd || 0)}</span>
                     </div>
@@ -649,20 +656,20 @@ const PendingRequests = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                      <p className="text-sm text-slate-500">Bắt đầu</p>
-                      <p className="text-2xl font-semibold text-slate-800">{formatHHmm(adjustStart || 0)}</p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-center">
+                      <p className="text-[11px] text-slate-500">Bắt đầu</p>
+                      <p className="text-sm font-semibold text-slate-800">{formatHHmm(adjustStart || 0)}</p>
                     </div>
-                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-center">
-                      <p className="text-sm text-slate-500">Thời lượng</p>
-                      <p className="text-2xl font-semibold text-amber-700">
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 text-center">
+                      <p className="text-[11px] text-slate-500">Thời lượng</p>
+                      <p className="text-sm font-semibold text-amber-700">
                         {Math.floor(((adjustEnd || 0) - (adjustStart || 0)) / 60)}h {((adjustEnd || 0) - (adjustStart || 0)) % 60}m
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                      <p className="text-sm text-slate-500">Kết thúc</p>
-                      <p className="text-2xl font-semibold text-slate-800">{formatHHmm(adjustEnd || 0)}</p>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-center">
+                      <p className="text-[11px] text-slate-500">Kết thúc</p>
+                      <p className="text-xl font-semibold text-slate-800">{formatHHmm(adjustEnd || 0)}</p>
                     </div>
                   </div>
 
@@ -678,17 +685,17 @@ const PendingRequests = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 border-t border-slate-200 bg-slate-50 p-5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 border-t border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                   <button
                     onClick={() => setShowAdjustModal(false)}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-medium text-slate-700 transition hover:bg-slate-100"
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={() => adjustAppointmentTime(selectedAppointment)}
                     disabled={adjusting}
-                    className="rounded-xl bg-udck-primary px-4 py-3 text-base font-medium text-white transition hover:bg-udck-dark disabled:cursor-not-allowed disabled:opacity-70"
+                    className="rounded-xl bg-udck-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-udck-dark disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {adjusting ? "Đang lưu..." : "Lưu thay đổi"}
                   </button>

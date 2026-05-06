@@ -16,31 +16,33 @@ This is a MERN stack project designed to facilitate the booking of appointments 
 - [Contributing](#contributing)
 
 ## Features
-- Admin management for adding, updating, and deleting teachers and approving student registrations.
-- Teacher functionalities for managing their appointment schedules, approving/cancelling appointments, sending email alerts to students, viewing messages, and viewing all appointments.
-- Student functionalities for registering, booking appointments with teachers, sending email alerts to teachers, and sending messages.
+- Admin management for adding, updating, and deleting teachers, and managing student accounts.
+- Teacher functionalities for managing their appointment schedules, approving/rejecting appointments, viewing notifications, and viewing all appointments.
+- Student functionalities for booking appointments with teachers, viewing appointments status, and viewing notifications.
 
 ## System Modules
 
 ### Admin
-- Add Teacher (Name, Department, Subject, etc.)
-- Update/Delete Teacher
-- Approve Registration Student
+- Login
+- Add/Update/Delete Teacher
+- Manage Student Accounts
+- View All Appointments
 
 ### Teacher
 - Login
-- Schedule Appointment
-- Approve/Cancel Appointment
-- Send Email Alerts to Students
-- View Messages
+- Manage Available Appointment Slots
+- View Appointment Requests
+- Approve/Reject Appointments
+- View Notifications
 - View All Appointments
 
 ### Student
-- Register
 - Login
-- Book Appointment
-- Send Email Alert to Teacher
-- Send Message
+- View Available Teachers and Appointment Slots
+- Book Appointments
+- Cancel Appointments
+- View Appointment Status
+- View Notifications
 
 ## Tech-Stack-Used
 
@@ -106,14 +108,7 @@ DB_PORT=3306
 
 # Khóa JWT để mã hóa token
 JWT_KEY='your-secret-key-change-in-production'
-
-# Cấu hình gửi email (SMTP)
-MAIL_HOST=smtp.gmail.com
-MAIL_USER='your-email@gmail.com'
-MAIL_PASS='your-app-password'
 ```
-
-> **Lưu ý:** Để lấy `MAIL_PASS`, bạn cần bật "Less secure app access" trên Google Account hoặc sử dụng **App Password** (nếu bật xác thực 2 bước).
 
 ### 5. Cấu hình biến môi trường cho Frontend
 
@@ -167,17 +162,46 @@ Mở trình duyệt và truy cập: `http://localhost:5173`
 
 ---
 
-## Tài khoản mặc định
+## Tài khoản
 
-Sau khi chạy lần đầu, hệ thống sẽ tự tạo các tài khoản mặc định sau:
+Tất cả tài khoản (Admin, Giảng viên, Sinh viên) được cấp bởi nhà trường. Admin có quyền tạo, cập nhật và xóa tài khoản của giảng viên và sinh viên.
 
-| Vai trò   | Email                | Mật khẩu   |
-|-----------|----------------------|------------|
-| Admin     | admin@gmail.com      | admin123   |
-| Giảng viên| teacher@gmail.com    | teacher123 |
-| Sinh viên | student@gmail.com    | student123 |
+**Tài khoản Mặc định (mẫu):**
 
-> **Lưu ý:** Đây là tài khoản demo. Trong môi trường production, hãy thay đổi mật khẩu mặc định.
+| Vai trò   | Email                  | Mật khẩu   |
+|-----------|------------------------|------------|
+| Admin     | admin                  | admin123   |
+| Giảng viên| gv001@kontum.udn.vn    | pass123    |
+| Sinh viên | sv001@kontum.udn.vn    | pass123    |
+
+> Lưu ý: hiện tại backend cho phép lưu mật khẩu dạng plain text trong bảng `USERS` và sẽ so sánh trực tiếp nếu mật khẩu không phải hash.
+
+### SQL tạo tài khoản mẫu
+
+```sql
+USE udck;
+
+INSERT INTO USERS (Username, Password, Role, Status) VALUES
+  ('admin', 'admin123', 'Admin', 'Active');
+SET @admin_user_id = LAST_INSERT_ID();
+
+INSERT INTO ADMIN (Full_Name, User_ID) VALUES
+  ('Admin System', @admin_user_id);
+
+INSERT INTO USERS (Username, Password, Role, Status) VALUES
+  ('gv001', 'pass123', 'Lecturer', 'Active');
+SET @lecturer_user_id = LAST_INSERT_ID();
+
+INSERT INTO LECTURER (User_ID, Email, Full_Name) VALUES
+  (@lecturer_user_id, 'gv001@kontum.udn.vn', 'Giảng viên 001');
+
+INSERT INTO USERS (Username, Password, Role, Status) VALUES
+  ('sv001', 'pass123', 'Student', 'Active');
+SET @student_user_id = LAST_INSERT_ID();
+
+INSERT INTO STUDENT (Student_ID, User_ID, Email, Full_Name, ClassName) VALUES
+  (1, @student_user_id, 'sv001@kontum.udn.vn', 'Sinh viên 001', 'CNTT');
+```
 
 ## Screenshots
 
@@ -197,18 +221,6 @@ Teacher Dashboard
 Admin Dashboard
 
 ![admin](https://github.com/user-attachments/assets/f1dd4c78-bf81-4ca8-9a7a-b803b303d474)
-
-## Tài khoản mặc định
-
-Sau khi chạy lần đầu, hệ thống sẽ tự tạo các tài khoản mặc định sau:
-
-| Vai trò   | Email                | Mật khẩu   |
-|-----------|----------------------|------------|
-| Admin     | admin@gmail.com      | admin123   |
-| Giảng viên| teacher@gmail.com    | teacher123 |
-| Sinh viên | student@gmail.com    | student123 |
-
-> **Lưu ý:** Đây là tài khoản demo. Trong môi trường production, hãy thay đổi mật khẩu mặc định.
 
 ## Contributing
 

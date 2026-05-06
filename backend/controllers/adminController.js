@@ -12,8 +12,6 @@ const { Op, QueryTypes } = require("sequelize");
 const AppError = require("../utils/AppError");
 const catchAsync = require("../utils/catchAsync");
 const bcrypt = require("bcrypt");
-const { connect } = require("../utils/sendEmail");
-const transporter = connect();
 // Middleware setRole
 exports.setRole = function (role) {
   return (req, res, next) => {
@@ -178,13 +176,6 @@ exports.updateStudentPassword = catchAsync(async (req, res, next) => {
 exports.approveStudent = catchAsync(async (req, res, next) => {
   const student = await Student.findByPk(req.params.id, { include: [{ model: User, as: 'StudentUser' }] });
   if (!student) return next(new AppError("Student not found", 404));
-
-  await transporter.sendMail({
-    from: '"tutor-time@brevo.com',
-    to: student.Email,
-    subject: "Account Approved",
-    html: `<h2>Congratulations!</h2><p>Your account has been approved.</p>`
-  });
 
   res.status(200).json({ status: "SUCCESS", message: "Student Approved" });
 });

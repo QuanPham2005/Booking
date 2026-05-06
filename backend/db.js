@@ -30,7 +30,7 @@ const connectToDB = async () => {
     require('./models/Student');
     require('./models/Lecturer');
     require('./models/Admin');
-    require('./models/Appointment2');
+    require('./models/Appointment');
     require('./models/Department');
     require('./models/Major');
     require('./models/AvailableSlot');
@@ -53,6 +53,13 @@ const connectToDB = async () => {
       await sequelize.query(
         `ALTER TABLE NOTIFICATIONS MODIFY Target_Role ENUM('Admin','Student','Lecturer','All') NOT NULL DEFAULT 'All'`
       );
+    }
+
+    const [appointmentHandledCols] = await sequelize.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'APPOINTMENTS' AND COLUMN_NAME = 'HandledAt'`
+    );
+    if (!appointmentHandledCols.length) {
+      await sequelize.query(`ALTER TABLE APPOINTMENTS ADD COLUMN HandledAt DATETIME NULL`);
     }
   } catch (err) {
     console.error(

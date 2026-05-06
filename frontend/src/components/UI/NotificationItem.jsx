@@ -35,7 +35,7 @@ export const NotificationItem = ({
       <div className="flex-shrink-0">{iconMap[type]}</div>
       <div className="flex-1">
         <p className="font-medium text-gray-900">{title}</p>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
+        <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">{description}</p>
         <p className="text-xs text-gray-400 mt-1">{formatTime(time)}</p>
       </div>
       {isNew && <span className="ml-2 text-xs font-semibold text-red-600">New</span>}
