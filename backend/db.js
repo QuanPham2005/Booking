@@ -18,7 +18,11 @@ const sequelize = new Sequelize(DATABASE_URL, {
   dialectOptions: {
     charset: 'utf8mb4',
     supportBigNumbers: true,
-    bigNumberStrings: true
+    bigNumberStrings: true,
+    ssl: {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
+    }
   }
 });
 
