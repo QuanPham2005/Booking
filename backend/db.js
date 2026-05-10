@@ -21,7 +21,7 @@ const sequelize = new Sequelize(DATABASE_URL, {
     bigNumberStrings: true,
     ssl: {
       minVersion: 'TLSv1.2',
-      rejectUnauthorized: true
+      rejectUnauthorized: false
     }
   }
 });
