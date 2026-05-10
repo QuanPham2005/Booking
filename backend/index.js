@@ -36,6 +36,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
+
+// Xử lý preflight requests cho tất cả routes
+app.options('*', cors());
+
 // Connect to MySQL (Sequelize)
 const { connectToDB } = require("./db");
 
