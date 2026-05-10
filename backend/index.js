@@ -14,8 +14,28 @@ if (!process.env.JWT_KEY) {
 
 // middleware
 app.use(express.json({ limit: "50mb" }));
-app.use(cors());
+// Cấu hình CORS chi tiết
+const allowedOrigins = [
+  'https://booking-ten-silk.vercel.app', // Domain frontend bạn đang dùng
+  'https://booking.vercel.app',          // Domain khác (nếu có)
+  'http://localhost:5173',               // Để bạn vẫn test được ở máy local
+  'http://localhost:3000'
+];
 
+app.use(cors({
+  origin: function (origin, callback) {
+    // Cho phép các request không có origin (như Postman hoặc thiết bị di động)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 // Connect to MySQL (Sequelize)
 const { connectToDB } = require("./db");
 
