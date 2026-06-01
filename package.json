@@ -3,5 +3,12 @@
     "cors": "^2.8.6",
     "dayjs": "^1.11.20",
     "rc-slider": "^11.1.9"
+  },
+  "devDependencies": {
+    "wrangler": "^4.95.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   }
 }
